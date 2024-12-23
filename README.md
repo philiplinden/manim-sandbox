@@ -39,9 +39,3 @@ Set Up a New Project:
 ```bash
 python cli.py new my-project
 ```
-
-Clean Outputs:
-
-```bash
-python cli.py clean my-project
-```

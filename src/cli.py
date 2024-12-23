@@ -1,12 +1,18 @@
-import os
-import shutil
+import logging
+from pathlib import Path
+import subprocess
 import click
-from subprocess import run
 
 # Constants
-SRC_DIR = "src/common"
-OUTPUT_DIR = "output"
+SRC_DIR = Path("src")
+OUTPUT_DIR = Path("output")
 
+# Configure logging
+log = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s: %(message)s'
+)
 
 @click.group()
 def cli():
@@ -24,47 +30,43 @@ def cli():
 )
 def build(project_name, target):
     """Build static or dynamic figures for a specific project."""
-    project_path = os.path.join(SRC_DIR, project_name)
-    output_path = os.path.join(OUTPUT_DIR, project_name, target)
+    project_path = SRC_DIR / project_name
+    output_path = OUTPUT_DIR / project_name / target
 
-    if not os.path.exists(project_path):
-        click.echo(
-            f"Error: Project '{project_name}' does not exist in {SRC_DIR}."
-        )
+    if not project_path.exists():
+        log.error(f"Project '{project_name}' does not exist in {SRC_DIR}.")
         return
 
     quality = "-qk --save-png" if target == "static" else "-qm"
 
     # Ensure output directory exists
-    os.makedirs(output_path, exist_ok=True)
-    click.echo(f"Building {target} figures for project: {project_name}...")
+    output_path.mkdir(parents=True, exist_ok=True)
+    log.info(f"Building {target} figures for project: {project_name}...")
 
     # Process each file in the project folder
-    for file in os.listdir(project_path):
-        if file.endswith(".py"):
-            file_path = os.path.join(project_path, file)
-            click.echo(f"Processing {file}...")
-            run(
-                f"manim {file_path} {quality} --output-file {output_path}",
-                shell=True,
-            )
+    for file_path in project_path.glob("*.py"):
+        log.info(f"Processing {file_path.name}...")
+        subprocess.run(
+            ["manim", str(file_path), quality, "--output-file", str(output_path)],
+            check=True,
+        )
 
-    click.echo(f"Build complete! Outputs saved to {output_path}")
+    log.info(f"Build complete! Outputs saved to {output_path}")
 
 
 @cli.command()
 @click.argument("project_name")
 def new(project_name):
     """Set up a new project folder."""
-    click.echo(f"Creating new project: {project_name}...")
+    log.info(f"Creating new project: {project_name}...")
 
     # Folder structure
-    project_path = os.path.join(SRC_DIR, project_name)
-    os.makedirs(project_path, exist_ok=True)
+    project_path = SRC_DIR / project_name
+    project_path.mkdir(parents=True, exist_ok=True)
 
     # Create example scripts
-    with open(os.path.join(project_path, "intro.py"), "w") as f:
-        f.write(f"""# Example: Introduction figure
+    intro_file = project_path / "intro.py"
+    intro_file.write_text(f"""# Example: Introduction figure
 from manim import *
 
 class Intro(Scene):
@@ -72,8 +74,8 @@ class Intro(Scene):
         self.add(Text("Hello, {project_name}!"))
 """)
 
-    with open(os.path.join(project_path, "example.py"), "w") as f:
-        f.write("""# Example: Another figure
+    example_file = project_path / "example.py"
+    example_file.write_text("""# Example: Another figure
 from manim import *
 
 class Example(Scene):
@@ -81,23 +83,4 @@ class Example(Scene):
         self.add(Square())
 """)
 
-    click.echo(f"Project {project_name} setup complete!")
-
-
-@cli.command()
-@click.argument("project_name", required=False)
-def clean(project_name):
-    """Clean outputs for a specific project or all outputs."""
-    if project_name:
-        output_path = os.path.join(OUTPUT_DIR, project_name)
-        if os.path.exists(output_path):
-            shutil.rmtree(output_path)
-            click.echo(f"Cleaned outputs for project: {project_name}")
-        else:
-            click.echo(f"No outputs found for project: {project_name}")
-    else:
-        if os.path.exists(OUTPUT_DIR):
-            shutil.rmtree(OUTPUT_DIR)
-            click.echo("Cleaned all outputs.")
-        else:
-            click.echo("No outputs to clean.")
+    log.info(f"Project {project_name} setup complete at path: {project_path}!")
