@@ -40,9 +40,7 @@ manimsb new my-project
 Build all media for a specific project:
 
 ```bash
-# static outputs like images
-manimsb build my-project --target static
-
-# dynamic outputs like videos
-manimsb build my-project --target dynamic
+manimsb build project-name --format gif  # default
+manimsb build project-name --format png
+manimsb build project-name --format mp4
 ```

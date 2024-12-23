@@ -25,33 +25,35 @@ def cli():
 @cli.command()
 @click.argument("project_name")
 @click.option(
-    "--target",
-    required=True,
-    type=click.Choice(["static", "dynamic"]),
-    help="Build type: 'static' or 'dynamic'.",
+    "--format",
+    type=click.Choice(["png", "gif", "mp4"]),
+    default="gif",
+    help="Output format: 'png', 'gif', or 'mp4'.",
 )
-def build(project_name, target):
-    """Build static or dynamic figures for a specific project."""
+def build(project_name, format):
+    """Build figures for a specific project."""
     project_path = SRC_DIR / project_name
-    output_path = OUTPUT_DIR / project_name / target
+    output_path = OUTPUT_DIR / project_name
 
     if not project_path.exists():
         log.error(f"Project '{project_name}' does not exist in {SRC_DIR}.")
         return
 
-    quality = "-qk --save-png" if target == "static" else "-qm"
+    # Set quality and format arguments based on output format
+    if format == "png":
+        quality_args = ["-qk", "--save-png"]
+    elif format == "gif":
+        quality_args = ["-qm", "--format", "gif"]
+    else:  # mp4
+        quality_args = ["-qm", "--format", "mp4"]
 
-    # Ensure output directory exists
-    output_path.mkdir(parents=True, exist_ok=True)
-    log.info(f"Building {target} figures for project: {project_name}...")
+    log.info(f"Building files for project: {project_name}...")
 
     # Process each file in the project folder
     for file_path in project_path.glob("*.py"):
         log.info(f"Processing {file_path.name}...")
-        subprocess.run(
-            ["manim", str(file_path), quality, "--output-file", str(output_path)],
-            check=True,
-        )
+        command = ["manim", str(file_path)] + quality_args
+        subprocess.run(command, check=True)
 
     log.info(f"Build complete! Outputs saved to {output_path}")
 
