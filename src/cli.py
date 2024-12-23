@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 import subprocess
 import click
+from importlib.metadata import version
 
 # Constants
 SRC_DIR = Path("src")
@@ -15,6 +16,7 @@ logging.basicConfig(
 )
 
 @click.group()
+@click.version_option(version=version("manim-sandbox"))
 def cli():
     """CLI for managing Manim projects."""
     pass

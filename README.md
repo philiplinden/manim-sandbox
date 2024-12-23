@@ -24,18 +24,25 @@ manim-sandbox/
 
 ## Usage
 
-Build for a Specific Project:
+Install as an editable package:
+
+```bash
+pip install -e .
+manimsb --help
+```
+
+Set up a new project folder:
+
+```bash
+manimsb new my-project
+```
+
+Build all media for a specific project:
 
 ```bash
 # static outputs like images
-python cli.py build my-project --target static
+manimsb build my-project --target static
 
 # dynamic outputs like videos
-python cli.py build my-project --target dynamic
-```
-
-Set Up a New Project:
-
-```bash
-python cli.py new my-project
+manimsb build my-project --target dynamic
 ```
