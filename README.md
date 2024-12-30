@@ -24,23 +24,26 @@ manim-sandbox/
 
 ## Usage
 
-Install as an editable package:
+This repo comes with a CLI tool called `mmake` (manim-make) that you can use to
+build and manage your Manim projects.
+
+Install `mmake` as an editable package:
 
 ```bash
 pip install -e .
-manimsb --help
+mmake --help
 ```
 
 Set up a new project folder:
 
 ```bash
-manimsb new my-project
+mmake new my-project
 ```
 
 Build all media for a specific project:
 
 ```bash
-manimsb build project-name --format gif  # default
-manimsb build project-name --format png
-manimsb build project-name --format mp4
+mmake build project-name --format gif  # default
+mmake build project-name --format png
+mmake build project-name --format mp4
 ```

@@ -1,7 +1,6 @@
-# Example: Introduction figure
 from manim import *
 
-class Intro(Scene):
+class PhotonClock(Scene):
     def construct(self):
         # Create mirrors (horizontal lines)
         mirror_top = Line(start=[-2, 2, 0], end=[2, 2, 0], color=BLUE)
