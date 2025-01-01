@@ -1,66 +1,47 @@
 from manim import *
+from manim_sandbox.common.compound_objects import two_opposing_walls
+
 
 class PhotonClock(Scene):
     def construct(self):
-        # Create mirrors (horizontal lines)
-        mirror_top = Line(start=[-2, 2, 0], end=[2, 2, 0], color=BLUE)
-        mirror_bottom = Line(start=[-2, -2, 0], end=[2, -2, 0], color=BLUE)
+        # Define top and bottom walls
+        TOP_WALL = UP
+        BOTTOM_WALL = DOWN
 
-        # Create photon (dot)
-        photon = Dot(color=YELLOW)
+        # Create the walls and add them to the scene
+        walls = two_opposing_walls(TOP_WALL, BOTTOM_WALL, wall_width=1.5, hatch_length=0.3)
+        self.add(walls)
+
+        photon = Dot(color=YELLOW).move_to(BOTTOM_WALL)
+        trace = TracedPath(photon.get_center, stroke_width=2, stroke_color=YELLOW, stroke_opacity=0.7)
+
+        clock = VGroup(walls, photon, trace)
         
-        # Add elements to scene
-        self.add(mirror_top, mirror_bottom)
-        self.add(photon)
-
-        # Create distance and time counters
-        distance = 0
-        mirror_spacing = 4  # Distance between mirrors
+        self.play(FadeIn(clock))
         
-        distance_text = Text("Distance: ", font_size=24).move_to([-3, 3, 0])
-        distance_number = DecimalNumber(
-            0,
-            num_decimal_places=1,
-            font_size=24
-        ).next_to(distance_text, RIGHT)
-        
-        time_text = Text("Time: ", font_size=24).move_to([-3, 2.5, 0])
-        time_number = DecimalNumber(
-            0,
-            num_decimal_places=2,
-            font_size=24
-        ).next_to(time_text, RIGHT)
-        
-        self.add(distance_text, distance_number, time_text, time_number)
+        # Define the path for the photon to move along
+        path_points = [BOTTOM_WALL, TOP_WALL, BOTTOM_WALL]
+        photon_path = VMobject().set_points_as_corners(path_points)
 
-        # Create the bouncing animation
-        bounce_time = 1.0  # Time for one bounce (up or down)
-        num_bounces = 4    # Number of complete bounces
+        # Animate the photon along the path while waiting simultaneously
+        self.play(
+            MoveAlongPath(photon, photon_path),
+            rate_func=linear
+        )
+        self.wait(1)
 
-        # Initial position at bottom mirror
-        photon.move_to([-0.5, -2, 0])
+        self.play(
+            clock.animate.shift(LEFT * 6)
+        )
+        self.wait(2)
 
-        # Create the bouncing animations
-        for i in range(num_bounces * 2):
-            distance += mirror_spacing
-            if i % 2 == 0:
-                # Moving up
-                self.play(
-                    photon.animate.move_to([-0.5, 2, 0]),
-                    distance_number.animate.set_value(distance),
-                    time_number.animate.set_value(distance/3e8),
-                    run_time=bounce_time,
-                    rate_func=linear
-                )
-            else:
-                # Moving down
-                self.play(
-                    photon.animate.move_to([-0.5, -2, 0]),
-                    distance_number.animate.set_value(distance),
-                    time_number.animate.set_value(distance/3e8),
-                    run_time=bounce_time,
-                    rate_func=linear
-                )
-
-        # Pause briefly at the end
-        self.wait(0.5)
+        moving_path_points = [BOTTOM_WALL + LEFT * 6, TOP_WALL, BOTTOM_WALL + RIGHT * 6]
+        moving_photon_path = VMobject().set_points_as_corners(moving_path_points)
+        self.play(
+            AnimationGroup(
+                walls.animate(rate_func=linear, run_time=2).shift(RIGHT * 12),
+                MoveAlongPath(photon, moving_photon_path, rate_func=linear, run_time=2),
+            )
+        )
+        self.wait(2)
+        self.play(FadeOut(clock))
