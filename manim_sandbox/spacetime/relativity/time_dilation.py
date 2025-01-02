@@ -37,8 +37,8 @@ class LightClock(VGroup):
     walls: VGroup
     photon: Photon
     label: Text | None = None
+    indicator: AnalogClock | None = None
     proper_time = ValueTracker(0)
-    tick_progress: float = 0
     velocity = ValueTracker(0)
     elements: list[VMobject | VGroup] = []
 
@@ -51,11 +51,12 @@ class LightClock(VGroup):
         hatch_length=0.3,
         title=None,
         color=WHITE,
+        show_indicator=True,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
 
-        self.add_updater(self.update_tick_progress)
+        self.proper_time.add_updater(self.update_tick_progress)
 
         position = initial_position
         # Create walls using the provided function
@@ -68,7 +69,7 @@ class LightClock(VGroup):
         )
 
         # Create photon
-        self.photon = Photon(position=self.photon_position(), direction=UP, color=YELLOW)
+        self.photon = Photon(position=self.photon_position(0), direction=UP, color=YELLOW)
 
         # Create label
         if title:
@@ -80,22 +81,31 @@ class LightClock(VGroup):
         else:
             self.label = None
 
+        if show_indicator:
+            self.indicator = AnalogClock(color=color).next_to(
+                self.walls[1][0], DOWN
+            )
+
         self.elements = [
             e
             for e in [
                 self.walls,
                 self.photon,
                 self.label,
+                self.indicator,
             ]
             if e is not None
         ]
 
-    def update_tick_progress(self):
-        self.tick_progress = self.proper_time.get_value() % 1
-        self.photon.move_to(self.photon_position())
+    def update_tick_progress(self, mobj):
+        proper_time = self.proper_time.get_value()
+        tick_progress = proper_time % 1
+        self.photon.move_to(self.photon_position(tick_progress))
+        if self.indicator:
+            self.indicator.accumulated_time.set_value(proper_time)
+            self.indicator.next_to(self.walls[1][0], DOWN)
 
-    def photon_position(self):
-        progress = self.tick_progress
+    def photon_position(self, progress: float):
         start = self.walls[1][0].get_center()
         end = self.walls[0][0].get_center()
         if progress < 0.5:
@@ -158,20 +168,24 @@ class TimeDilationDemo(Scene):
             stationary_clock.show(),
             moving_clock.show(),
         )
-        
-        
-        stationary_analog_clock = AnalogClock(color=BLUE).next_to(
-            stationary_clock.walls[1][0], DOWN
-        )
-        moving_analog_clock = AnalogClock(color=RED).next_to(
-            moving_clock.walls[1][0], DOWN
-        )
+
         self.play(
-            Create(stationary_analog_clock),
-            Create(moving_analog_clock),
+            stationary_clock.proper_time.animate.set_value(1),
+            moving_clock.proper_time.animate.set_value(1),
+            moving_clock.shift(RIGHT * 3),
+            run_time=4,
+            rate_func=linear,
         )
-        self.wait(1)
-        self.play(stationary_analog_clock.accumulated_time.animate.set_value(5), run_time=5, rate_func=linear)
+        self.wait(2)
+        self.play(
+            FadeOut(stationary_clock.clock_elements()),
+            FadeOut(moving_clock.clock_elements()),
+        )
+        self.wait(2)
+        self.play(
+            FadeOut(stationary_clock.photon.trace),
+            FadeOut(moving_clock.photon.trace),
+        )
 
         # moving_diagonal = Line(moving_path[0], moving_stop_point, color=RED)
         # stationary_vertical = Line(
