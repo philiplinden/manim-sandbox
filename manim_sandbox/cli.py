@@ -5,7 +5,7 @@ import click
 from importlib.metadata import version
 
 # Constants
-SRC_DIR = Path("src")
+SRC_DIR = Path("manim_sandbox")
 OUTPUT_DIR = Path("output")
 
 # Configure logging
