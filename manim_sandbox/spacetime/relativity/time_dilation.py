@@ -84,15 +84,17 @@ class LightClock(VGroup):
         )
 
     def photon_position(self, proper_time: float):
-        tick_progress = proper_time % 1
-        bottom_to_top_progress = tick_progress / 0.5
-        top_to_bottom_progress = (tick_progress - 0.5) / 0.5
+        # Use a repeating bounce rather than resetting at each integer time:
+        period = 0.5
+        cycles = int(proper_time // period)
+        remainder = (proper_time % period) / period
         start = self.walls[1][0].get_center()
         end = self.walls[0][0].get_center()
-        if tick_progress < 0.5:
-            return interpolate(start, end, bottom_to_top_progress)
+
+        if cycles % 2 == 0:
+            return interpolate(start, end, remainder)
         else:
-            return interpolate(end, start, top_to_bottom_progress)
+            return interpolate(end, start, remainder)
 
     def update_indicator(self, mobj):
         proper_time = self.proper_time.get_value()
@@ -163,6 +165,14 @@ class TimeDilationDemo(Scene):
             Create(astronomer_view_clock),
             Create(astronaut_clock),
         )
+        
+        # stash some geometry for later
+        a1 = astronaut_clock.walls[1][0].get_center()
+        a2 = astronaut_clock.walls[0][0].get_center()
+        b1 = astronomer_view_clock.walls[0][0].get_center()
+        b2 = b1 + RIGHT * ASTRONAUT_SPEED * 4
+        c1 = astronomer_view_clock.walls[1][0].get_center()
+        c2 = b2.copy()
 
         # Progress coordinate time by 1/4 tick then pause
         tick_progress = 1 / 4
@@ -226,53 +236,117 @@ class TimeDilationDemo(Scene):
             FadeOut(v_brace),
             FadeOut(v_component_label),
         )
-        # play the rest of the animation until astronaut pov reaches 1.0
+
+        # Play until the astronaut pov reaches 1.0
+        # Instead of going from 1/4 straight to 1.0 and possibly skipping frames:
+        # we split the timeline into two sub-plays: from 1/4 to 1/2, then 1/2 to 1.0.
         
-        # Progress coordinate time by 1/4 tick then pause
-        tick_progress = 1
+        tick_half = 0.5
+        half_play_time = 2.0
+        left_right_displacement_half = ASTRONAUT_SPEED * half_play_time
 
-        play_time = 6.0
-        left_right_displacement = ASTRONAUT_SPEED * play_time
-
-        astronaut_delta_t = tick_progress
-        light_speed = (tick_progress * CLOCK_HEIGHT * 2) / play_time
-        astronomer_delta_t = astronaut_delta_t * np.sqrt(
-            1 - (ASTRONAUT_SPEED**2) / (light_speed**2)
+        astronaut_delta_t_half = tick_half
+        light_speed_half = (tick_half * CLOCK_HEIGHT * 2) / half_play_time
+        astronomer_delta_t_half = astronaut_delta_t_half * np.sqrt(
+            1 - (ASTRONAUT_SPEED**2) / (light_speed_half**2)
         )
+
+        # Animate from ~1/4 to 1/2
         self.play(
-            astronaut_clock.proper_time.animate.set_value(astronaut_delta_t),
+            astronaut_clock.proper_time.animate.set_value(astronaut_delta_t_half),
             astronomer_view_clock.proper_time.animate.set_value(
-                astronomer_delta_t
+                astronomer_delta_t_half
             ),
             astronomer_view_clock.walls.animate.shift(
-                RIGHT * left_right_displacement
+                RIGHT * left_right_displacement_half
             ),
-            run_time=play_time,
+            run_time=half_play_time,
+            rate_func=linear,
+        )
+        self.wait(0.5)
+
+        # Now continue from 1/2 to 1.0
+        remaining_play_time = 4.0
+        remaining_tick = 1 - tick_half
+        left_right_displacement_rest = ASTRONAUT_SPEED * remaining_play_time
+
+        astronaut_delta_t_rest = 1.0
+        light_speed_rest = (
+            (remaining_tick * CLOCK_HEIGHT * 2) / remaining_play_time
+        )
+        astronomer_delta_t_rest = remaining_tick * np.sqrt(
+            1 - (ASTRONAUT_SPEED**2) / (light_speed_rest**2)
+        ) + astronomer_delta_t_half
+
+        self.play(
+            astronaut_clock.proper_time.animate.set_value(astronaut_delta_t_rest),
+            astronomer_view_clock.proper_time.animate.set_value(
+                astronomer_delta_t_rest
+            ),
+            astronomer_view_clock.walls.animate.shift(
+                RIGHT * left_right_displacement_rest
+            ),
+            run_time=remaining_play_time,
             rate_func=linear,
         )
         self.wait(1)
 
         # fade out clock and walls and make it a trig/geometry problem
-        self.play(
-            FadeOut(astronaut_clock.walls),
-            FadeOut(astronomer_view_clock.walls),
-            FadeOut(astronaut_clock.photon),
-            FadeOut(astronomer_view_clock.photon),
-            FadeOut(astronaut_clock.indicator),
-            FadeOut(astronomer_view_clock.indicator),
-            FadeOut(astronaut_clock.indicator.progress_indicator),
-            FadeOut(astronomer_view_clock.indicator.progress_indicator),
-        )
-        
         # derive lorentz factor from the geometry
+        side_a = Line(a1, a2, color=GREEN)
+        side_a_label = MathTex("c \\Delta t", color=GREEN).next_to(side_a, LEFT)
+        side_b = Line(b1, b2, color=PURPLE)
+        side_b_label = MathTex("v \\Delta \\tau", color=PURPLE).next_to(side_b, UP)
+        side_c = Line(c1, c2, color=GOLD)
+        side_c_label = MathTex("c \\Delta \\tau", color=GOLD).next_to(side_c, RIGHT)
+        self.play(
+            FadeOut(VGroup(
+                astronaut_grid,
+                astronomer_grid,
+                label1,
+                label2,
+                astronaut_clock.walls,
+                astronomer_view_clock.walls,
+                astronaut_clock.photon,
+                astronomer_view_clock.photon,
+                astronaut_clock.indicator,
+                astronomer_view_clock.indicator,
+                astronaut_clock.indicator.progress_indicator,
+                astronomer_view_clock.indicator.progress_indicator,
+                astronaut_clock.photon.trace,
+                astronomer_view_clock.photon.trace,
+            )),
+            Create(side_a),
+            Write(side_a_label),
+            Create(side_b),
+            Write(side_b_label),
+            Create(side_c),
+            Write(side_c_label),
+        )
+        self.play(VGroup(side_a, side_a_label).animate.shift(RIGHT * 2))
+        self.wait(1)
         
+        theorem = MathTex(
+            "(", "c \\Delta t", ")^2",
+            "=",
+            "(", "v \\Delta \\tau", ")^2",
+            "+",
+            "(", "c \\Delta \\tau", ")^2",
+            tex_to_color_map={"c \\Delta \\tau": GOLD, "v \\Delta \\tau": PURPLE, "c \\Delta t": GREEN},
+        ).to_edge(UR)
+        self.play(Write(theorem))
+
         # Fade everything out to reset the scene for a loop
         self.wait(1)
         self.play(
-            FadeOut(astronaut_grid),
-            FadeOut(astronomer_grid),
-            FadeOut(label1),
-            FadeOut(label2),
-            FadeOut(astronaut_clock.photon.trace),
-            FadeOut(astronomer_view_clock.photon.trace),
+            FadeOut(side_a),
+            FadeOut(side_a_label),
+            FadeOut(side_b),
+            FadeOut(side_b_label),
+            FadeOut(side_c),
+            FadeOut(side_c_label),
+            theorem.animate.move_to(ORIGIN).to_edge(UP),
         )
+
+        self.wait(1)
+        
