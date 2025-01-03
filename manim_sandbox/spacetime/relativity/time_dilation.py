@@ -4,14 +4,10 @@ from manim.typing import Vector3D
 from manim_sandbox.common.compound_objects import TwoOpposingWalls, AnalogClock
 
 
-SPEED_OF_LIGHT = 1  # units per second
-
-
 class Photon(Dot):
-    speed: float = SPEED_OF_LIGHT
-    trace: TracedPath
-
-    def __init__(self, position: Vector3D, direction: Vector3D, *args, **kwargs):
+    def __init__(
+        self, position: Vector3D, direction: Vector3D, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.move_to(position)
         self.direction = direction
@@ -26,7 +22,8 @@ class Photon(Dot):
     def get_distance_traveled(self):
         points = self.trace.get_points()
         return sum(
-            np.linalg.norm(points[i] - points[i - 1]) for i in range(1, len(points))
+            np.linalg.norm(points[i] - points[i - 1])
+            for i in range(1, len(points))
         )
 
     def clear_trace(self):
@@ -34,14 +31,6 @@ class Photon(Dot):
 
 
 class LightClock(VGroup):
-    walls: VGroup
-    photon: Photon
-    label: Text | None = None
-    indicator: AnalogClock | None = None
-    proper_time = ValueTracker(0)
-    velocity = ValueTracker(0)
-    elements: list[VMobject | VGroup] = []
-
     def __init__(
         self,
         *args,
@@ -49,15 +38,11 @@ class LightClock(VGroup):
         height=4,
         wall_width=1,
         hatch_length=0.3,
-        title=None,
         color=WHITE,
-        show_indicator=True,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-
-        self.proper_time.add_updater(self.update_tick_progress)
-
+        self.proper_time = ValueTracker(0)
         position = initial_position
         # Create walls using the provided function
         self.walls = TwoOpposingWalls(
@@ -67,166 +52,159 @@ class LightClock(VGroup):
             hatch_length=hatch_length,
             color=color,
         )
-
-        # Create photon
-        self.photon = Photon(position=self.photon_position(0), direction=UP, color=YELLOW)
-
-        # Create label
-        if title:
-            self.label = (
-                Text(title, font_size=24)
-                .next_to(self.walls, UP)
-                .add_updater(lambda m: m.next_to(self.walls, UP))
+        self.wall_separation_distance = np.linalg.norm(
+            x=self.walls[0][0].get_bottom() - self.walls[1][0].get_top()
+        )
+        self.photon = Photon(
+            position=self.photon_position(0), direction=UP, color=YELLOW
+        ).add_updater(
+            update_function=lambda m: m.move_to(
+                self.photon_position(self.proper_time.get_value())
             )
-        else:
-            self.label = None
+        )
+        self.indicator = (
+            AnalogClock(color=color, decimal_places=2)
+            .next_to(self.walls[1][0], DOWN)
+            .add_updater(self.update_indicator)
+        )
 
-        if show_indicator:
-            self.indicator = AnalogClock(color=color).next_to(
-                self.walls[1][0], DOWN
-            )
-
-        self.elements = [
-            e
-            for e in [
-                self.walls,
-                self.photon,
-                self.label,
-                self.indicator,
+        # Include the walls, photon, indicator, and trace in self.elements
+        self.add(
+            *[
+                e
+                for e in [
+                    self.walls,
+                    self.indicator,
+                    self.photon,
+                    self.photon.trace,
+                ]
+                if e is not None
             ]
-            if e is not None
-        ]
+        )
 
-    def update_tick_progress(self, mobj):
-        proper_time = self.proper_time.get_value()
+    def photon_position(self, proper_time: float):
         tick_progress = proper_time % 1
-        self.photon.move_to(self.photon_position(tick_progress))
-        if self.indicator:
-            self.indicator.accumulated_time.set_value(proper_time)
-            self.indicator.next_to(self.walls[1][0], DOWN)
-
-    def photon_position(self, progress: float):
+        bottom_to_top_progress = tick_progress / 0.5
+        top_to_bottom_progress = (tick_progress - 0.5) / 0.5
         start = self.walls[1][0].get_center()
         end = self.walls[0][0].get_center()
-        if progress < 0.5:
-            return interpolate(start, end, progress)
+        if tick_progress < 0.5:
+            return interpolate(start, end, bottom_to_top_progress)
         else:
-            return interpolate(end, start, progress)
+            return interpolate(end, start, top_to_bottom_progress)
 
-    def add_to_scene(self, scene: Scene):
-        scene.add(self.clock_and_trace())
-
-    def clock_elements(self):
-        return VGroup(*self.elements)
-
-    def clock_and_trace(self):
-        return VGroup(*self.elements, self.photon.trace)
-
-    def show(self):
-        return Create(self.clock_elements())
-
-    def shift(self, shift: Vector3D):
-        return ApplyMethod(self.clock_elements().shift, shift)
-
-    def shift_clock_and_trace(self, shift: Vector3D):
-        return ApplyMethod(self.clock_and_trace().shift, shift)
-
-    def move_to(self, position: Vector3D):
-        return ApplyMethod(self.clock_elements().move_to, position)
-
-    def move_clock_and_trace_to(self, position: Vector3D):
-        return ApplyMethod(self.clock_and_trace().move_to, position)
+    def update_indicator(self, mobj):
+        proper_time = self.proper_time.get_value()
+        mobj.accumulated_time.set_value(proper_time)
+        mobj.next_to(self.walls[1][0], DOWN)
 
 
 class TimeDilationDemo(Scene):
     def construct(self):
-        # Constants
         CLOCK_HEIGHT = 4
         WALL_WIDTH = 1
+        
+        # Make a grid for each reference frame
+        astronaut_grid = NumberPlane(
+            x_range=[-1, 1, 1],
+            x_axis_config={"stroke_color": RED},
+            y_range=[0, config.frame_height / 2, 1],
+            y_axis_config={"stroke_color": RED},
+            background_line_style={
+                "stroke_color": RED_D,
+                "stroke_width": 1,
+                "stroke_opacity": 0.5,
+            },
+        ).shift(LEFT * 5)
+        label1 = Text("Astronaut's POV", color=RED, font_size=24).next_to(astronaut_grid, UP, buff=0.5)
+        self.play(
+            Create(astronaut_grid),
+            Write(label1),
+        )
 
-        # Create stationary clock
-        stationary_clock = LightClock(
-            initial_position=LEFT * 4,
+        astronomer_grid = NumberPlane(
+            x_range=[0, 10, 1],
+            x_axis_config={"stroke_color": BLUE},
+            y_range=[0, config.frame_height / 2, 1],
+            y_axis_config={"stroke_color": BLUE},
+            background_line_style={
+                "stroke_color": BLUE_D,
+                "stroke_width": 1,
+                "stroke_opacity": 0.5,
+            },
+        ).shift(RIGHT * 2)
+        label2 = Text("Astronomer's POV", color=BLUE, font_size=24).next_to(astronomer_grid, UP, buff=0.5)
+        self.play(
+            Create(astronomer_grid),
+            Write(label2),
+        )
+
+        # Create astronaut POV clock
+        astronaut_clock = LightClock(
+            initial_position=LEFT * 5,
             height=CLOCK_HEIGHT,
             wall_width=WALL_WIDTH,
-            title="Stationary Clock",
-            color=BLUE,
         )
-        stationary_clock.add_to_scene(self)
 
-        # Create moving clock
-        moving_clock = LightClock(
-            initial_position=LEFT * 1,
+        # Create astronomer-view clock
+        astronomer_view_clock = LightClock(
+            initial_position=LEFT * 3,
             height=CLOCK_HEIGHT,
             wall_width=WALL_WIDTH,
-            title="Moving Clock",
-            color=RED,
-        )
-        moving_clock.add_to_scene(self)
-
-        self.play(
-            stationary_clock.show(),
-            moving_clock.show(),
         )
 
+        self.add(astronaut_clock, astronomer_view_clock)
         self.play(
-            stationary_clock.proper_time.animate.set_value(1),
-            moving_clock.proper_time.animate.set_value(1),
-            moving_clock.shift(RIGHT * 3),
-            run_time=4,
+            Create(astronomer_view_clock),
+            Create(astronaut_clock),
+        )
+
+        # Progress coordinate time by 1/4 tick then pause
+        tick_progress = 1 / 4
+
+        play_time = 2.0
+        left_right_displacement = 1.0
+        clock_speed = left_right_displacement / play_time
+
+        astronaut_delta_t = tick_progress
+        light_speed = (tick_progress * CLOCK_HEIGHT * 2) / play_time
+        astronomer_delta_t = astronaut_delta_t * np.sqrt(
+            1 - (clock_speed**2) / (light_speed**2)
+        )
+        self.play(
+            astronaut_clock.proper_time.animate.set_value(astronaut_delta_t),
+            astronomer_view_clock.proper_time.animate.set_value(
+                astronomer_delta_t
+            ),
+            astronomer_view_clock.walls.animate.shift(
+                RIGHT * left_right_displacement
+            ),
+            run_time=play_time,
             rate_func=linear,
         )
         self.wait(2)
+
+        # Point out that the speed of the photon in the moving clock is the
+        # same, but the clock has "ticked" slower because the photon had to move
+        # more distance in this reference frame.
+
+        # Fade everything out to reset the scene for a loop
         self.play(
-            FadeOut(stationary_clock.clock_elements()),
-            FadeOut(moving_clock.clock_elements()),
+            FadeOut(astronaut_grid),
+            FadeOut(astronomer_grid),
+            FadeOut(label1),
+            FadeOut(label2),
+            FadeOut(astronaut_clock.walls),
+            FadeOut(astronomer_view_clock.walls),
+            FadeOut(astronaut_clock.photon),
+            FadeOut(astronomer_view_clock.photon),
+            FadeOut(astronaut_clock.indicator),
+            FadeOut(astronomer_view_clock.indicator),
+            FadeOut(astronaut_clock.indicator.progress_indicator),
+            FadeOut(astronomer_view_clock.indicator.progress_indicator),
+            FadeOut(astronaut_clock.photon.trace),
+            FadeOut(astronomer_view_clock.photon.trace),
         )
-        self.wait(2)
-        self.play(
-            FadeOut(stationary_clock.photon.trace),
-            FadeOut(moving_clock.photon.trace),
-        )
-
-        # moving_diagonal = Line(moving_path[0], moving_stop_point, color=RED)
-        # stationary_vertical = Line(
-        #     stationary_path[0], stationary_stop_point, color=RED
-        # )
-        # # Vertical line from bottom to same y as midpoint
-        # component_vertical = DashedLine(
-        #     moving_path[0],
-        #     [moving_path[0][0], moving_stop_point[1], 0],
-        #     color=BLUE,
-        # )
-        # # Horizontal line from that vertical line to the midpoint
-        # component_horizontal = DashedLine(
-        #     [moving_path[0][0], moving_stop_point[1], 0],
-        #     moving_stop_point,
-        #     color=BLUE,
-        # )
-
-        # # Create them in the scene
-        # self.play(
-        #     Create(moving_diagonal),
-        #     Create(stationary_vertical),
-        #     # Start Generation Here
-        #     Create(Brace(moving_diagonal, LEFT)),
-        #     Write(
-        #         MathTex(f"{moving_diagonal.get_length():.2f}").next_to(
-        #             Brace(
-        #                 moving_diagonal,
-        #                 moving_diagonal.copy().rotate(PI / 2).get_unit_vector(),
-        #             ),
-        #             RIGHT,
-        #         )
-        #     ),
-        #     Create(Brace(stationary_vertical, LEFT)),
-        #     Write(
-        #         MathTex(f"{stationary_vertical.get_length():.2f}").next_to(
-        #             Brace(stationary_vertical, LEFT), LEFT
-        #         )
-        #     ),
-        # )
-
         # # Briefly highlight that the diagonal is the same length
         # # as the stationary clock's vertical half.
         # # (Optionally add a small label)

@@ -94,14 +94,13 @@ class TwoOpposingWalls(VGroup):
 
 
 class AnalogClock(VGroup):
-    accumulated_time = ValueTracker(0)
-
     def __init__(
-        self, radius=0.5, color=BLUE, font_size=36, **kwargs
+        self, radius=0.5, color=BLUE, font_size=36, decimal_places=1, **kwargs
     ):
         super().__init__(**kwargs)
         self.radius = radius
         self.color = color
+        self.accumulated_time = ValueTracker(0)
 
         # Circle to represent the clock face
         self.face = Circle(radius=self.radius, color=self.color)
@@ -120,7 +119,7 @@ class AnalogClock(VGroup):
 
         # Show current tick progress as a decimal in the center
         self.value_display = DecimalNumber(
-            0, num_decimal_places=1, color=WHITE, font_size=font_size
+            0, num_decimal_places=decimal_places, color=WHITE, font_size=font_size
         ).move_to(self.face.get_center())
         # This updates the text to the current accumulated_time
         self.value_display.add_updater(
