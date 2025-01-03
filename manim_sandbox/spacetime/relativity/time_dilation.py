@@ -525,12 +525,10 @@ class TimeDilationDemo(Scene):
         ).next_to(derivation_step_5, DOWN, buff=SMALL_BUFF)
         self.play(TransformMatchingTex(derivation_step_5, lorentz_factor_eq))
         self.wait(1)
-        explanation_lorentz_factor = MathTex(
-            r"\text{The Lorentz factor, } \gamma \text{, quantifies time dilation from relative motion}",
-            tex_to_color_map={"\\gamma": LIGHT_PINK},
+        explanation_lorentz_factor = Tex(
+            "The Lorentz factor, $\\gamma$, quantifies time dilation due to relative motion",
             font_size=32,
-            align="left",
-        ).next_to(lorentz_factor_eq, DOWN, buff=SMALL_BUFF)
+        ).next_to(lorentz_factor_eq, DOWN, buff=LARGE_BUFF)
         self.play(Write(explanation_lorentz_factor))
         self.wait(1)
 
@@ -539,27 +537,15 @@ class TimeDilationDemo(Scene):
             FadeOut(derivation_step_2),
             FadeOut(derivation_step_3),
             FadeOut(derivation_step_4),
-            FadeOut(derivation_step_5),
             FadeOut(explanation_lorentz_factor),
             lorentz_factor_eq.animate.to_edge(UP),
         )
-        explanation_text = MathTex(
-            r"""
-\text{The only way the speed of light, } c \text{, can be the same in all reference frames} \\
-\text{is if the elapsed time } \Delta t \text{, for an object moving relative to an observer, } v \\
-\text{, must dilate (} \Delta \tau = \gamma \Delta t \text{).}
-""",
-            tex_to_color_map={
-                "c": YELLOW,
-                "v": GREEN,
-                "\\gamma": LIGHT_PINK,
-                "\\Delta t": RED,
-                "\\Delta \\tau": BLUE,
-            },
+        explanation_text = Tex(
+            "In the astronomer's reference frame, the photon moves across more space over the course of one ``tick'' of the clock. The only way the speed of the photon, $c$, can be the same in all reference frames and yet travel across more distance in one reference frame than in another is if the elapsed time experienced by a moving object, $\\Delta \\tau$, ``dilates'' compared to the elapsed time experienced by an observer at rest in the reference frame, $\Delta t$.",
             font_size=32,
-            align="left",
-        ).next_to(lorentz_factor_eq, DOWN, buff=SMALL_BUFF)
+            
+        ).next_to(lorentz_factor_eq, DOWN, buff=LARGE_BUFF)
 
-        self.play(Write(explanation_text))
+        self.play(Write(explanation_text), run_time=4)
         self.wait(2)
         self.play(FadeOut(lorentz_factor_eq), FadeOut(explanation_text))
