@@ -120,12 +120,12 @@ class TimeDilationDemo(Scene):
                 "stroke_opacity": 0.5,
             },
         ).shift(LEFT * 5)
-        label1 = Text("Astronaut's POV", color=RED, font_size=24).next_to(
-            astronaut_grid, UP, buff=0.5
-        )
+        astronaut_pov_label = Text(
+            "Astronaut's POV", color=RED, font_size=24
+        ).next_to(astronaut_grid, UP, buff=0.5)
 
         astronomer_grid = NumberPlane(
-            x_range=[0, 4, 1],
+            x_range=[0, 6, 1],
             x_axis_config={"stroke_color": BLUE},
             y_range=[0, config.frame_height / 2, 1],
             y_axis_config={"stroke_color": BLUE},
@@ -134,16 +134,16 @@ class TimeDilationDemo(Scene):
                 "stroke_width": 1,
                 "stroke_opacity": 0.5,
             },
-        ).shift(LEFT)
-        label2 = Text("Astronomer's POV", color=BLUE, font_size=24).next_to(
-            astronomer_grid, UP, buff=0.5
         )
+        astronomer_pov_label = Text(
+            "Astronomer's POV", color=BLUE, font_size=24
+        ).next_to(astronomer_grid, UP, buff=0.5)
 
         self.play(
             Create(astronaut_grid),
-            Write(label1),
+            Write(astronaut_pov_label),
             Create(astronomer_grid),
-            Write(label2),
+            Write(astronomer_pov_label),
         )
 
         # Create astronaut POV clock
@@ -165,14 +165,12 @@ class TimeDilationDemo(Scene):
             Create(astronomer_view_clock),
             Create(astronaut_clock),
         )
-        
+
         # stash some geometry for later
         a1 = astronaut_clock.walls[1][0].get_center()
         a2 = astronaut_clock.walls[0][0].get_center()
         b1 = astronomer_view_clock.walls[0][0].get_center()
-        b2 = b1 + RIGHT * ASTRONAUT_SPEED * 4
         c1 = astronomer_view_clock.walls[1][0].get_center()
-        c2 = b2.copy()
 
         # Play the tick progress in segments to ensure we don't skip any frames
         # and end up dropping points in the photon path trace
@@ -181,9 +179,7 @@ class TimeDilationDemo(Scene):
 
         astronaut_delta_t = 0.25
         light_speed = (astronaut_delta_t * CLOCK_HEIGHT * 2) / play_time
-        lorentz_factor = np.sqrt(
-            1 - (ASTRONAUT_SPEED**2) / (light_speed**2)
-        )
+        lorentz_factor = np.sqrt(1 - (ASTRONAUT_SPEED**2) / (light_speed**2))
         astronomer_delta_t = astronaut_delta_t * lorentz_factor
         self.play(
             astronaut_clock.proper_time.animate.set_value(astronaut_delta_t),
@@ -196,7 +192,6 @@ class TimeDilationDemo(Scene):
             run_time=play_time,
             rate_func=linear,
         )
-        self.wait(1)
 
         # Point out that the speed of the photon in the moving clock is the
         # same, but the clock has "ticked" slower because the photon had to move
@@ -205,17 +200,21 @@ class TimeDilationDemo(Scene):
         astronaut_brace = Brace(astronaut_clock.photon.trace, LEFT)
         astronaut_length = MathTex("c \\Delta t").next_to(astronaut_brace, LEFT)
 
-        path_vector = (
-            LEFT * left_right_displacement + UP * (astronomer_delta_t)
-        )
+        path_vector = LEFT * left_right_displacement + UP * (astronomer_delta_t)
         path_vector = path_vector / np.linalg.norm(path_vector)
         astronomer_brace = BraceBetweenPoints(
             astronomer_view_clock.photon.trace.get_points()[0],
             astronomer_view_clock.photon.trace.get_points()[-1],
         )
-        astronomer_length = MathTex("c \\Delta \\tau").next_to(astronomer_view_clock.photon.trace, RIGHT).shift(DOWN * 0.3 + LEFT * 0.1)
+        astronomer_length = (
+            MathTex("c \\Delta \\tau")
+            .next_to(astronomer_view_clock.photon.trace, RIGHT)
+            .shift(DOWN * 0.3 + LEFT * 0.1)
+        )
         v_brace = Brace(astronomer_view_clock.photon.trace, UP)
-        v_component_label = MathTex("v \\Delta \\tau").next_to(v_brace, UP, buff=0.1)
+        v_component_label = MathTex("v \\Delta \\tau").next_to(
+            v_brace, UP, buff=0.1
+        )
 
         self.play(
             Create(astronaut_brace),
@@ -275,6 +274,8 @@ class TimeDilationDemo(Scene):
             rate_func=linear,
             run_time=play_time,
         )
+        b2 = astronomer_view_clock.photon.get_center()
+        c2 = b2.copy()
 
         # Now continue from 1/2 to 1.0
         play_time = 4.0 - time_difference
@@ -297,32 +298,22 @@ class TimeDilationDemo(Scene):
             run_time=play_time,
         )
         self.wait(1)
+        self.play(
+            FadeOut(astronaut_pov_label),
+            FadeOut(astronomer_pov_label),
+        )
 
         # fade out clock and walls and make it a trig/geometry problem
         # derive lorentz factor from the geometry
-        side_a = Line(a1, a2, color=GREEN)
+        side_a = Line(a1, a2, color=RED)
         side_a_label = MathTex("c \\Delta t").next_to(side_a, LEFT)
-        side_b = Line(b1, b2, color=RED)
+        side_b = Line(b1, b2, color=GREEN)
         side_b_label = MathTex("v \\Delta \\tau").next_to(side_b, UP)
         side_c = Line(c1, c2, color=BLUE)
-        side_c_label = MathTex("c \\Delta \\tau").next_to(side_c, RIGHT).shift(LEFT)
+        side_c_label = (
+            MathTex("c \\Delta \\tau").next_to(side_c, RIGHT).shift(LEFT)
+        )
         self.play(
-            FadeOut(VGroup(
-                astronaut_grid,
-                astronomer_grid,
-                label1,
-                label2,
-                astronaut_clock.walls,
-                astronomer_view_clock.walls,
-                astronaut_clock.photon,
-                astronomer_view_clock.photon,
-                astronaut_clock.indicator,
-                astronomer_view_clock.indicator,
-                astronaut_clock.indicator.progress_indicator,
-                astronomer_view_clock.indicator.progress_indicator,
-                astronaut_clock.photon.trace,
-                astronomer_view_clock.photon.trace,
-            )),
             Create(side_a),
             Write(side_a_label),
             Create(side_b),
@@ -330,61 +321,245 @@ class TimeDilationDemo(Scene):
             Create(side_c),
             Write(side_c_label),
         )
+        self.play(
+            FadeOut(
+                VGroup(
+                    astronaut_grid,
+                    astronomer_grid,
+                    astronaut_clock.walls,
+                    astronomer_view_clock.walls,
+                    astronaut_clock.photon,
+                    astronomer_view_clock.photon,
+                    astronaut_clock.indicator,
+                    astronomer_view_clock.indicator,
+                    astronaut_clock.indicator.progress_indicator,
+                    astronomer_view_clock.indicator.progress_indicator,
+                    astronaut_clock.photon.trace,
+                    astronomer_view_clock.photon.trace,
+                )
+            ),
+        )
         self.play(VGroup(side_a, side_a_label).animate.shift(RIGHT * 2))
-        self.wait(1)
 
         pythagorean_theorem = MathTex(
-            "(", "c \\Delta t", ")^2",
-            "=",
-            "(", "v \\Delta \\tau", ")^2",
-            "+",
-            "(", "c \\Delta \\tau", ")^2",
-            tex_to_color_map={"c \\Delta t": GREEN, "v \\Delta \\tau": RED, "c \\Delta \\tau": BLUE},
+            "(c \\Delta \\tau)^2 = (v \\Delta \\tau)^2 + (c \\Delta t)^2",
+            tex_to_color_map={
+                "c \\Delta \\tau": BLUE,
+                "v \\Delta \\tau": GREEN,
+                "c \\Delta t": RED,
+            },
         ).to_edge(UP)
+
         self.play(
             TransformMatchingTex(side_a_label, pythagorean_theorem),
             TransformMatchingTex(side_b_label, pythagorean_theorem),
             TransformMatchingTex(side_c_label, pythagorean_theorem),
         )
-        theorem2 = MathTex(
-                "(", "c \\Delta t", ")^2",
-                "=",
-                "(", "v \\Delta \\tau", ")^2",
-                "+",
-                "(", "c \\Delta \\tau", ")^2",
-                color=WHITE,
-            ).to_edge(UP)
 
         # Fade everything out except the derivation
-        self.wait(1)
         self.play(
             FadeOut(side_a),
             FadeOut(side_b),
             FadeOut(side_c),
-            pythagorean_theorem.animate.become(theorem2),
+            pythagorean_theorem.animate.set_color(WHITE),
         )
         self.wait(1)
-        
-        # go through the derivation step by step
-        derivation_step_1 = MathTex(
-            "(", "c \\Delta t", ")^2",
-            "=",
-            "(", "v \\Delta \\tau", ")^2",
-            "+",
-            "(", "c \\Delta \\tau", ")^2",
-            tex_to_color_map={"c": YELLOW, "\\Delta \\tau": BLUE, "v": RED, "\\Delta t": GREEN},
-        )
-        derivation_step_2 = MathTex(
-            "\\Delta \\tau", "=",
-            "(", "v \\Delta \\tau", ")^2",
-            "+",
-            "(", "c \\Delta \\tau", ")^2",
-            tex_to_color_map={"c": YELLOW, "\\Delta \\tau": BLUE, "v": RED, "\\Delta t": GREEN},
-        )
-        
-        # self.play(
-        #     TransformMatchingTex(theorem.copy(), derivation_step_1),
-        # )
 
+        # remind the audience what's what
+        derivation_step_1a = MathTex(
+            "(c \\Delta \\tau)^2 = (v \\Delta \\tau)^2 + (c \\Delta t)^2",
+            tex_to_color_map={"\\Delta t": RED},
+        ).to_edge(UP)
+        derivation_step_1b = MathTex(
+            "(c \\Delta \\tau)^2 = (v \\Delta \\tau)^2 + (c \\Delta t)^2",
+            tex_to_color_map={"\\Delta \\tau": BLUE, "\\Delta t": RED},
+        ).to_edge(UP)
+        derivation_step_1c = MathTex(
+            "(c \\Delta \\tau)^2 = (v \\Delta \\tau)^2 + (c \\Delta t)^2",
+            tex_to_color_map={
+                "v": GREEN,
+                "\\Delta \\tau": BLUE,
+                "\\Delta t": RED,
+            },
+        ).to_edge(UP)
+        derivation_step_1d = MathTex(
+            "(c \\Delta \\tau)^2 = (v \\Delta \\tau)^2 + (c \\Delta t)^2",
+            tex_to_color_map={
+                "c": YELLOW,
+                "v": GREEN,
+                "\\Delta \\tau": BLUE,
+                "\\Delta t": RED,
+            },
+        ).to_edge(UP)
+
+        explanation1 = (
+            VGroup(
+                MathTex("\\Delta t", color=RED),
+                Text("Elapsed clock time in Astronaut's reference frame").scale(
+                    0.5
+                ),
+            )
+            .arrange(RIGHT)
+            .next_to(derivation_step_1a, DOWN)
+        )
+        self.play(
+            TransformMatchingTex(pythagorean_theorem, derivation_step_1a),
+            Write(explanation1),
+        )
+        self.play(explanation1.animate.shift(DOWN))
+
+        explanation2 = (
+            VGroup(
+                MathTex("\\Delta \\tau", color=BLUE),
+                Text(
+                    "Elapsed clock time in Astronomer's reference frame"
+                ).scale(0.5),
+            )
+            .arrange(RIGHT)
+            .next_to(derivation_step_1b, DOWN)
+        )
+        self.play(
+            TransformMatchingTex(derivation_step_1a, derivation_step_1b),
+            Write(explanation2),
+        )
+        self.play(explanation2.animate.next_to(explanation1, DOWN))
+
+        explanation3 = (
+            VGroup(
+                MathTex("v", color=GREEN),
+                Text(
+                    "Speed of the clock in the Astronomer's reference frame"
+                ).scale(0.5),
+            )
+            .arrange(RIGHT)
+            .next_to(derivation_step_1c, DOWN)
+        )
+        self.play(
+            TransformMatchingTex(derivation_step_1b, derivation_step_1c),
+            Write(explanation3),
+        )
+        self.play(explanation3.animate.next_to(explanation2, DOWN))
+
+        explanation4 = (
+            VGroup(
+                MathTex("c", color=YELLOW),
+                Text("Speed of light (the same in all reference frames)").scale(
+                    0.5
+                ),
+            )
+            .arrange(RIGHT)
+            .next_to(derivation_step_1c, DOWN)
+        )
+        self.play(
+            TransformMatchingTex(derivation_step_1c, derivation_step_1d),
+            Write(explanation4),
+        )
+        self.play(explanation4.animate.next_to(explanation3, DOWN))
         self.wait(1)
-        
+        self.play(
+            FadeOut(explanation1),
+            FadeOut(explanation2),
+            FadeOut(explanation3),
+            FadeOut(explanation4),
+        )
+        # go through the derivation step by step
+        derivation_step_2 = MathTex(
+            "(c^2 \\Delta \\tau)^2 - (v \\Delta \\tau)^2 = (c \\Delta t)^2",
+            tex_to_color_map={
+                "c": YELLOW,
+                "v": GREEN,
+                "\\Delta \\tau": BLUE,
+                "\\Delta t": RED,
+            },
+        ).next_to(derivation_step_1d, DOWN)
+        self.play(
+            TransformMatchingTex(derivation_step_1d.copy(), derivation_step_2),
+        )
+        derivation_step_3 = MathTex(
+            "\\Delta \\tau^2 (c^2 - v^2) = c^2 \\Delta t^2",
+            tex_to_color_map={
+                "c": YELLOW,
+                "v": GREEN,
+                "\\Delta \\tau": BLUE,
+                "\\Delta t": RED,
+            },
+        ).next_to(derivation_step_2, DOWN)
+        self.play(
+            TransformMatchingTex(derivation_step_2.copy(), derivation_step_3),
+        )
+        derivation_step_4 = MathTex(
+            r"\Delta \tau^2 = (c^2 \Delta t^2) / (c^2 - v^2)",
+            tex_to_color_map={
+                "c": YELLOW,
+                "v": GREEN,
+                "\\Delta \\tau": BLUE,
+                "\\Delta t": RED,
+            },
+        ).next_to(derivation_step_3, DOWN)
+        self.play(
+            TransformMatchingTex(derivation_step_3.copy(), derivation_step_4),
+        )
+        derivation_step_5 = MathTex(
+            r"\Delta \tau = \Delta t / \sqrt{1 - (v/c)^2}",
+            tex_to_color_map={
+                "c": YELLOW,
+                "v": GREEN,
+                "\\Delta \\tau": BLUE,
+                "\\Delta t": RED,
+            },
+        ).next_to(derivation_step_4, DOWN)
+        self.play(
+            TransformMatchingTex(derivation_step_4.copy(), derivation_step_5),
+        )
+        self.wait(1)
+
+        lorentz_factor_eq = MathTex(
+            r"\Delta \tau = \gamma \Delta t \quad \gamma = (\sqrt{1 - (v/c)^2})^{-1}",
+            tex_to_color_map={
+                "c": YELLOW,
+                "v": GREEN,
+                "\\Delta \\tau": BLUE,
+                "\\Delta t": RED,
+                "\\gamma": LIGHT_PINK,
+            },
+        ).next_to(derivation_step_5, DOWN, buff=SMALL_BUFF)
+        self.play(TransformMatchingTex(derivation_step_5, lorentz_factor_eq))
+        self.wait(1)
+        explanation_lorentz_factor = MathTex(
+            r"\text{The Lorentz factor, } \gamma \text{, quantifies time dilation from relative motion}",
+            tex_to_color_map={"\\gamma": LIGHT_PINK},
+            font_size=32,
+            align="left",
+        ).next_to(lorentz_factor_eq, DOWN, buff=SMALL_BUFF)
+        self.play(Write(explanation_lorentz_factor))
+        self.wait(1)
+
+        self.play(
+            FadeOut(derivation_step_1d),
+            FadeOut(derivation_step_2),
+            FadeOut(derivation_step_3),
+            FadeOut(derivation_step_4),
+            FadeOut(derivation_step_5),
+            FadeOut(explanation_lorentz_factor),
+            lorentz_factor_eq.animate.to_edge(UP),
+        )
+        explanation_text = MathTex(
+            r"""
+\text{The only way the speed of light, } c \text{, can be the same in all reference frames} \\
+\text{is if the elapsed time } \Delta t \text{, for an object moving relative to an observer, } v \\
+\text{, must dilate (} \Delta \tau = \gamma \Delta t \text{).}
+""",
+            tex_to_color_map={
+                "c": YELLOW,
+                "v": GREEN,
+                "\\gamma": LIGHT_PINK,
+                "\\Delta t": RED,
+                "\\Delta \\tau": BLUE,
+            },
+            font_size=32,
+            align="left",
+        ).next_to(lorentz_factor_eq, DOWN, buff=SMALL_BUFF)
+
+        self.play(Write(explanation_text))
+        self.wait(2)
+        self.play(FadeOut(lorentz_factor_eq), FadeOut(explanation_text))
