@@ -95,7 +95,14 @@ class TwoOpposingWalls(VGroup):
 
 class AnalogClock(VGroup):
     def __init__(
-        self, radius=0.5, color=BLUE, font_size=36, decimal_places=1, **kwargs
+        self,
+        radius=0.5,
+        color=BLUE,
+        font_size=36,
+        decimal_places=1,
+        symbol="\\tau",
+        use_symbol_for_value=True,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.radius = radius
@@ -117,10 +124,14 @@ class AnalogClock(VGroup):
         # Use only one updater
         self.add_updater(self.update_progress_indicator)
 
-        # Show current tick progress as a decimal in the center
-        self.value_display = DecimalNumber(
-            0, num_decimal_places=decimal_places, color=WHITE, font_size=font_size
-        ).move_to(self.face.get_center())
+        if use_symbol_for_value:
+            self.value_display = MathTex(
+                symbol, color=WHITE, font_size=font_size
+            ).move_to(self.face.get_center())
+        else:
+            self.value_display = DecimalNumber(
+                0, num_decimal_places=decimal_places, color=WHITE, font_size=font_size
+            ).move_to(self.face.get_center())
         # This updates the text to the current accumulated_time
         self.value_display.add_updater(
             lambda m: m.set_value(self.accumulated_time.get_value())
