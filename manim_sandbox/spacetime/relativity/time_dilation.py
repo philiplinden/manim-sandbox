@@ -378,28 +378,6 @@ class TimeDilationDemo(Scene):
             "(c \\Delta t)^2 = (v \\Delta t)^2 + (c \\Delta \\tau)^2",
             tex_to_color_map={"\\Delta \\tau": RED},
         ).to_edge(UP)
-        derivation_step_1b = MathTex(
-            "(c \\Delta t)^2 = (v \\Delta t)^2 + (c \\Delta \\tau)^2",
-            tex_to_color_map={"\\Delta \\tau": RED, "\\Delta t": BLUE, },
-        ).to_edge(UP)
-        derivation_step_1c = MathTex(
-            "(c \\Delta t)^2 = (v \\Delta t)^2 + (c \\Delta \\tau)^2",
-            tex_to_color_map={
-                "\\Delta \\tau": RED,
-                "\\Delta t": BLUE,
-                "v": GREEN,
-            },
-        ).to_edge(UP)
-        derivation_step_1d = MathTex(
-            "(c \\Delta t)^2 = (v \\Delta t)^2 + (c \\Delta \\tau)^2",
-            tex_to_color_map={
-                "\\Delta \\tau": RED,
-                "\\Delta t": BLUE,
-                "v": GREEN,
-                "c": YELLOW,
-            },
-        ).to_edge(UP)
-
         explanation1 = (
             VGroup(
                 MathTex("\\Delta \\tau", color=RED),
@@ -410,12 +388,11 @@ class TimeDilationDemo(Scene):
             .arrange(RIGHT)
             .next_to(derivation_step_1a, DOWN)
         )
-        self.play(
-            TransformMatchingTex(pythagorean_theorem, derivation_step_1a),
-            Write(explanation1),
-        )
-        self.play(explanation1.animate.shift(DOWN))
 
+        derivation_step_1b = MathTex(
+            "(c \\Delta t)^2 = (v \\Delta t)^2 + (c \\Delta \\tau)^2",
+            tex_to_color_map={"\\Delta \\tau": RED, "\\Delta t": BLUE, },
+        ).to_edge(UP)
         explanation2 = (
             VGroup(
                 MathTex("\\Delta t", color=BLUE),
@@ -426,12 +403,15 @@ class TimeDilationDemo(Scene):
             .arrange(RIGHT)
             .next_to(derivation_step_1b, DOWN)
         )
-        self.play(
-            TransformMatchingTex(derivation_step_1a, derivation_step_1b),
-            Write(explanation2),
-        )
-        self.play(explanation2.animate.next_to(explanation1, DOWN))
 
+        derivation_step_1c = MathTex(
+            "(c \\Delta t)^2 = (v \\Delta t)^2 + (c \\Delta \\tau)^2",
+            tex_to_color_map={
+                "\\Delta \\tau": RED,
+                "\\Delta t": BLUE,
+                "v": GREEN,
+            },
+        ).to_edge(UP)
         explanation3 = (
             VGroup(
                 MathTex("v", color=GREEN),
@@ -442,12 +422,16 @@ class TimeDilationDemo(Scene):
             .arrange(RIGHT)
             .next_to(derivation_step_1c, DOWN)
         )
-        self.play(
-            TransformMatchingTex(derivation_step_1b, derivation_step_1c),
-            Write(explanation3),
-        )
-        self.play(explanation3.animate.next_to(explanation2, DOWN))
 
+        derivation_step_1d = MathTex(
+            "(c \\Delta t)^2 = (v \\Delta t)^2 + (c \\Delta \\tau)^2",
+            tex_to_color_map={
+                "\\Delta \\tau": RED,
+                "\\Delta t": BLUE,
+                "v": GREEN,
+                "c": YELLOW,
+            },
+        ).to_edge(UP)
         explanation4 = (
             VGroup(
                 MathTex("c", color=YELLOW),
@@ -458,6 +442,22 @@ class TimeDilationDemo(Scene):
             .arrange(RIGHT)
             .next_to(derivation_step_1c, DOWN)
         )
+
+        self.play(
+            TransformMatchingTex(pythagorean_theorem, derivation_step_1a),
+            Write(explanation1),
+        )
+        self.play(explanation1.animate.shift(DOWN))
+        self.play(
+            TransformMatchingTex(derivation_step_1a, derivation_step_1b),
+            Write(explanation2),
+        )
+        self.play(explanation2.animate.next_to(explanation1, DOWN))
+        self.play(
+            TransformMatchingTex(derivation_step_1b, derivation_step_1c),
+            Write(explanation3),
+        )
+        self.play(explanation3.animate.next_to(explanation2, DOWN))
         self.play(
             TransformMatchingTex(derivation_step_1c, derivation_step_1d),
             Write(explanation4),
@@ -470,9 +470,10 @@ class TimeDilationDemo(Scene):
             FadeOut(explanation3),
             FadeOut(explanation4),
         )
+
         # go through the derivation step by step
         derivation_step_2 = MathTex(
-            "(c^2 \\Delta t)^2 - (v \\Delta t)^2 = (c \\Delta \\tau)^2",
+            r"(c^2 \Delta t)^2 - (v \Delta t)^2 = (c \Delta \tau)^2",
             tex_to_color_map={
                 "\\Delta \\tau": RED,
                 "\\Delta t": BLUE,
@@ -484,7 +485,7 @@ class TimeDilationDemo(Scene):
             TransformMatchingTex(derivation_step_1d.copy(), derivation_step_2),
         )
         derivation_step_3 = MathTex(
-            "\\Delta t^2 (c^2 - v^2) = c^2 \\Delta \\tau^2",
+            r"\\Delta t^2 (c^2 - v^2) = c^2 \\Delta \\tau^2",
             tex_to_color_map={
                 "\\Delta \\tau": RED,
                 "\\Delta t": BLUE,
@@ -508,7 +509,7 @@ class TimeDilationDemo(Scene):
             TransformMatchingTex(derivation_step_3.copy(), derivation_step_4),
         )
         derivation_step_5 = MathTex(
-            r"\Delta t = \Delta \\tau / \sqrt{1 - (v/c)^2}",
+            r"\Delta t^2 = (c^2 \Delta \\tau^2) / c^2 (1 - (v/c)^2)",
             tex_to_color_map={
                 "\\Delta \\tau": RED,
                 "\\Delta t": BLUE,
@@ -518,6 +519,18 @@ class TimeDilationDemo(Scene):
         ).next_to(derivation_step_4, DOWN)
         self.play(
             TransformMatchingTex(derivation_step_4.copy(), derivation_step_5),
+        )
+        derivation_step_6 = MathTex(
+            r"\Delta t = \Delta \\tau / \sqrt{1 - (v/c)^2}",
+            tex_to_color_map={
+                "\\Delta \\tau": RED,
+                "\\Delta t": BLUE,
+                "v": GREEN,
+                "c": YELLOW,
+            },
+        ).next_to(derivation_step_5, DOWN)
+        self.play(
+            TransformMatchingTex(derivation_step_5.copy(), derivation_step_6),
         )
         self.wait(1)
 
@@ -530,8 +543,8 @@ class TimeDilationDemo(Scene):
                 "c": YELLOW,
                 "\\gamma": LIGHT_PINK,
             },
-        ).next_to(derivation_step_5, DOWN, buff=SMALL_BUFF)
-        self.play(TransformMatchingTex(derivation_step_5, lorentz_factor_eq))
+        ).next_to(derivation_step_6, DOWN, buff=SMALL_BUFF)
+        self.play(TransformMatchingTex(derivation_step_6, lorentz_factor_eq))
         self.wait(1)
         explanation_lorentz_factor = Tex(
             "The Lorentz factor, $\\gamma$, quantifies time dilation due to relative motion",
@@ -545,6 +558,7 @@ class TimeDilationDemo(Scene):
             FadeOut(derivation_step_2),
             FadeOut(derivation_step_3),
             FadeOut(derivation_step_4),
+            FadeOut(derivation_step_5),
             FadeOut(explanation_lorentz_factor),
             lorentz_factor_eq.animate.to_edge(UP),
         )
