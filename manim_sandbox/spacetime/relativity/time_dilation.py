@@ -66,7 +66,12 @@ class LightClock(VGroup):
             )
         )
         self.indicator = (
-            AnalogClock(color=color, decimal_places=2, symbol=symbol, use_symbol_for_value=use_symbol_for_value)
+            AnalogClock(
+                color=color,
+                decimal_places=2,
+                symbol=symbol,
+                use_symbol_for_value=use_symbol_for_value,
+            )
             .next_to(self.walls[1][0], DOWN)
             .add_updater(self.update_indicator)
         )
@@ -154,7 +159,7 @@ class TimeDilationDemo(Scene):
             height=CLOCK_HEIGHT,
             wall_width=WALL_WIDTH,
             color=RED,
-            symbol="\\Delta \\tau",
+            symbol="\\tau",
             use_symbol_for_value=True,
         )
 
@@ -164,7 +169,7 @@ class TimeDilationDemo(Scene):
             height=CLOCK_HEIGHT,
             wall_width=WALL_WIDTH,
             color=BLUE,
-            symbol="\\Delta t",
+            symbol="t",
             use_symbol_for_value=True,
         )
 
@@ -206,7 +211,9 @@ class TimeDilationDemo(Scene):
         # more distance in this reference frame.
         # Create braces for each photon's traced path
         astronaut_brace = Brace(astronaut_clock.photon.trace, LEFT)
-        astronaut_length = MathTex("c \\Delta \\tau").next_to(astronaut_brace, LEFT)
+        astronaut_length = MathTex("c \\Delta \\tau").next_to(
+            astronaut_brace, LEFT
+        )
 
         path_vector = LEFT * left_right_displacement + UP * (astronomer_delta_t)
         path_vector = path_vector / np.linalg.norm(path_vector)
@@ -318,9 +325,7 @@ class TimeDilationDemo(Scene):
         side_b = Line(b1, b2, color=GREEN)
         side_b_label = MathTex("v \\Delta t").next_to(side_b, UP)
         side_c = Line(c1, c2, color=BLUE)
-        side_c_label = (
-            MathTex("c \\Delta t").next_to(side_c, RIGHT).shift(LEFT)
-        )
+        side_c_label = MathTex("c \\Delta t").next_to(side_c, RIGHT).shift(LEFT)
         self.play(
             Create(side_a),
             Write(side_a_label),
@@ -334,23 +339,15 @@ class TimeDilationDemo(Scene):
                 VGroup(
                     astronaut_grid,
                     astronomer_grid,
-                    astronaut_clock.walls,
-                    astronomer_view_clock.walls,
-                    astronaut_clock.photon,
-                    astronomer_view_clock.photon,
-                    astronaut_clock.indicator,
-                    astronomer_view_clock.indicator,
-                    astronaut_clock.indicator.progress_indicator,
-                    astronomer_view_clock.indicator.progress_indicator,
-                    astronaut_clock.photon.trace,
-                    astronomer_view_clock.photon.trace,
+                    astronaut_clock,
+                    astronomer_view_clock,
                 )
             ),
         )
         self.play(VGroup(side_a, side_a_label).animate.shift(RIGHT * 2))
 
         pythagorean_theorem = MathTex(
-            "(c \\Delta \\tau)^2 = (v \\Delta t)^2 + (c \\Delta t)^2",
+            r"(c \Delta t)^2 = (v \Delta t)^2 + (c \Delta \tau)^2",
             tex_to_color_map={
                 "c \\Delta \\tau": BLUE,
                 "v \\Delta t": GREEN,
@@ -375,7 +372,7 @@ class TimeDilationDemo(Scene):
 
         # remind the audience what's what
         derivation_step_1a = MathTex(
-            "(c \\Delta t)^2 = (v \\Delta t)^2 + (c \\Delta \\tau)^2",
+            r"(c \Delta t)^2 = (v \Delta t)^2 + (c \Delta \tau)^2",
             tex_to_color_map={"\\Delta \\tau": RED},
         ).to_edge(UP)
         explanation1 = (
@@ -390,8 +387,11 @@ class TimeDilationDemo(Scene):
         )
 
         derivation_step_1b = MathTex(
-            "(c \\Delta t)^2 = (v \\Delta t)^2 + (c \\Delta \\tau)^2",
-            tex_to_color_map={"\\Delta \\tau": RED, "\\Delta t": BLUE, },
+            r"(c \Delta t)^2 = (v \Delta t)^2 + (c \Delta \tau)^2",
+            tex_to_color_map={
+                "\\Delta \\tau": RED,
+                "\\Delta t": BLUE,
+            },
         ).to_edge(UP)
         explanation2 = (
             VGroup(
@@ -405,7 +405,7 @@ class TimeDilationDemo(Scene):
         )
 
         derivation_step_1c = MathTex(
-            "(c \\Delta t)^2 = (v \\Delta t)^2 + (c \\Delta \\tau)^2",
+            r"(c \Delta t)^2 = (v \Delta t)^2 + (c \Delta \tau)^2",
             tex_to_color_map={
                 "\\Delta \\tau": RED,
                 "\\Delta t": BLUE,
@@ -424,7 +424,7 @@ class TimeDilationDemo(Scene):
         )
 
         derivation_step_1d = MathTex(
-            "(c \\Delta t)^2 = (v \\Delta t)^2 + (c \\Delta \\tau)^2",
+            r"(c \Delta t)^2 = (v \Delta t)^2 + (c \Delta \tau)^2",
             tex_to_color_map={
                 "\\Delta \\tau": RED,
                 "\\Delta t": BLUE,
@@ -435,9 +435,7 @@ class TimeDilationDemo(Scene):
         explanation4 = (
             VGroup(
                 MathTex("c", color=YELLOW),
-                Text("Speed of light in all reference frames").scale(
-                    0.5
-                ),
+                Text("Speed of light in all reference frames").scale(0.5),
             )
             .arrange(RIGHT)
             .next_to(derivation_step_1c, DOWN)
@@ -485,7 +483,7 @@ class TimeDilationDemo(Scene):
             TransformMatchingTex(derivation_step_1d.copy(), derivation_step_2),
         )
         derivation_step_3 = MathTex(
-            r"\\Delta t^2 (c^2 - v^2) = c^2 \\Delta \\tau^2",
+            r"\Delta t^2 (c^2 - v^2) = c^2 \Delta \tau^2",
             tex_to_color_map={
                 "\\Delta \\tau": RED,
                 "\\Delta t": BLUE,
@@ -497,7 +495,7 @@ class TimeDilationDemo(Scene):
             TransformMatchingTex(derivation_step_2.copy(), derivation_step_3),
         )
         derivation_step_4 = MathTex(
-            r"\Delta t^2 = (c^2 \Delta \\tau^2) / (c^2 - v^2)",
+            r"\Delta t^2 = (c^2 \Delta \tau^2) / (c^2 - v^2)",
             tex_to_color_map={
                 "\\Delta \\tau": RED,
                 "\\Delta t": BLUE,
@@ -509,7 +507,7 @@ class TimeDilationDemo(Scene):
             TransformMatchingTex(derivation_step_3.copy(), derivation_step_4),
         )
         derivation_step_5 = MathTex(
-            r"\Delta t^2 = (c^2 \Delta \\tau^2) / c^2 (1 - (v/c)^2)",
+            r"\Delta t^2 = (c^2 \Delta \tau^2) / c^2 (1 - (v/c)^2)",
             tex_to_color_map={
                 "\\Delta \\tau": RED,
                 "\\Delta t": BLUE,
@@ -521,7 +519,7 @@ class TimeDilationDemo(Scene):
             TransformMatchingTex(derivation_step_4.copy(), derivation_step_5),
         )
         derivation_step_6 = MathTex(
-            r"\Delta t = \Delta \\tau / \sqrt{1 - (v/c)^2}",
+            r"\Delta t = \Delta \tau / \sqrt{1 - (v/c)^2}",
             tex_to_color_map={
                 "\\Delta \\tau": RED,
                 "\\Delta t": BLUE,
@@ -535,7 +533,7 @@ class TimeDilationDemo(Scene):
         self.wait(1)
 
         lorentz_factor_eq = MathTex(
-            r"\Delta t = \gamma \Delta \\tau \quad \gamma = (\sqrt{1 - (v/c)^2})^{-1}",
+            r"\Delta t = \gamma \Delta \tau \quad \gamma = 1/\sqrt{1 - (v/c)^2}",
             tex_to_color_map={
                 "\\Delta \\tau": RED,
                 "\\Delta t": BLUE,
@@ -563,11 +561,11 @@ class TimeDilationDemo(Scene):
             lorentz_factor_eq.animate.to_edge(UP),
         )
         explanation_text = Tex(
-            "In the astronomer's reference frame, the photon moves across more space over the course of one ``tick'' of the clock. The only way the speed of the photon, $c$, can be the same in all reference frames and yet travel across more distance in one reference frame than in another is if the elapsed time experienced by a moving object, $\\Delta \\tau$, ``dilates'' when observed from a reference frame at rest compared to the reference frame's proper time, $\Delta t$.",
-            font_size=32,
-            
+            "In the astronomer's reference frame, the photon moves across more space over the course of one ``tick'' of the clock. The only way the speed of the photon, $c$, can be the same in all reference frames and yet travel across more distance in one reference frame than in another is if the observed elapsed time experienced by a moving object, $\\Delta \\tau$, ``dilates'' compared to the reference frame's proper time, $\\Delta t$.",
+            font_size=36,
+            tex_environment="flushleft",
         ).next_to(lorentz_factor_eq, DOWN, buff=LARGE_BUFF)
 
         self.play(Write(explanation_text), run_time=4)
-        self.wait(2)
+        self.wait(4)
         self.play(FadeOut(lorentz_factor_eq), FadeOut(explanation_text))
